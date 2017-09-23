@@ -9,6 +9,7 @@ unigram_vocab_dict = {}
 UNKNOWN_WORD = 'UNK'
 ADD_K_SMOOTHING_CONSTANT = 0.75
 bigram_tag_vocab = 0
+unknown_word_tags = []
 
 
 def populate_bigram_probability(input_unigram_file, input_bigram_file,
@@ -55,7 +56,7 @@ def _populate_bigram_tags(input_bigram_file):
         for line in data:
             words = line.split()
 
-            bigram_tags_count[words[1] + ',' + words[2]] = float(words[0])
+            bigram_tags_count[words[1] + '|' + words[2]] = float(words[0])
 
 
 def _calculate_transition_probability(unigram_tag, bigram_tags_count, input_bigram_file):
@@ -71,18 +72,18 @@ def _calculate_transition_probability(unigram_tag, bigram_tags_count, input_bigr
 
     # for tag in range(0, len(unigram_tag)):
     #     for next_tag in range(0, len(unigram_tag)):
-    #         if unigram_tag[tag] + ',' + unigram_tag[next_tag] not in bigram_tags_count:
-    #             bigram_tags_count[unigram_tag[tag] + ',' + unigram_tag[next_tag]] = 0
-    #         transition_probability[unigram_tag[next_tag] + ',' + unigram_tag[tag]] = \
-    #             bigram_tags_count[unigram_tag[tag] + ',' + unigram_tag[next_tag]] / unigram_tags_count[unigram_tag[tag]]
+    #         if unigram_tag[tag] + '|' + unigram_tag[next_tag] not in bigram_tags_count:
+    #             bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] = 0
+    #         transition_probability[unigram_tag[next_tag] + '|' + unigram_tag[tag]] = \
+    #             bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] / unigram_tags_count[unigram_tag[tag]]
 
     # Using Add k smoothingw with k = 0.75
     for tag in range(0, len(unigram_tag)):
         for next_tag in range(0, len(unigram_tag)):
-            if unigram_tag[tag] + ',' + unigram_tag[next_tag] not in bigram_tags_count:
-                bigram_tags_count[unigram_tag[tag] + ',' + unigram_tag[next_tag]] = 0
-            transition_probability[unigram_tag[next_tag] + ',' + unigram_tag[tag]] = \
-                (bigram_tags_count[unigram_tag[tag] + ',' + unigram_tag[next_tag]] + ADD_K_SMOOTHING_CONSTANT) / \
+            if unigram_tag[tag] + '|' + unigram_tag[next_tag] not in bigram_tags_count:
+                bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] = 0
+            transition_probability[unigram_tag[next_tag] + '|' + unigram_tag[tag]] = \
+                (bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] + ADD_K_SMOOTHING_CONSTANT) / \
                   (unigram_tags_count[unigram_tag[tag]] + ADD_K_SMOOTHING_CONSTANT * bigram_tag_vocab)
 
 
@@ -118,13 +119,13 @@ def _calculate_bigram_word_tag_counts(input_word_tag_file):
             words = line.split()
 
             if words[1] in unigram_vocab_dict:
-                bigram_word_tag_count[words[1] + ',' + words[2]] = float(words[0])
+                bigram_word_tag_count[words[1] + '|' + words[2]] = float(words[0])
             else:
                 # word is UNK
-                if '{},{}'.format(UNKNOWN_WORD, words[2]) not in bigram_word_tag_count:
-                    bigram_word_tag_count['{},{}'.format(UNKNOWN_WORD, words[2])] = float(words[0])
+                if '{}|{}'.format(UNKNOWN_WORD, words[2]) not in bigram_word_tag_count:
+                    bigram_word_tag_count['{}|{}'.format(UNKNOWN_WORD, words[2])] = float(words[0])
                 else:
-                    bigram_word_tag_count['{},{}'.format(UNKNOWN_WORD, words[2])] += float(words[0])
+                    bigram_word_tag_count['{}|{}'.format(UNKNOWN_WORD, words[2])] += float(words[0])
 
 
 def _calculate_emission_probability(bigram_word_tag_count):
@@ -134,5 +135,15 @@ def _calculate_emission_probability(bigram_word_tag_count):
     :return:
     """
     for key, count in bigram_word_tag_count.iteritems():
-        keys = key.split(',')
-        emission_probability['{},{}'.format(keys[0], keys[1])] = float(count) / float(unigram_tags_count[keys[1]])
+        keys = key.split('|')
+        emission_probability['{}|{}'.format(keys[0], keys[1])] = float(count) / float(unigram_tags_count[keys[1]])
+
+
+def get_unknown_word_tags():
+    if not unknown_word_tags:
+        for k, v in emission_probability.iteritems():
+            keys = k.split('|')
+            if keys[0] == UNKNOWN_WORD:
+                unknown_word_tags.append(keys[1])
+
+    return unknown_word_tags
