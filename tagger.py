@@ -90,6 +90,7 @@ class Writer:
 
     def _writer_viterbi(self):
         sentence = []
+        original_sentence = []
         tag_set = []
         lines_to_write = []
 
@@ -100,6 +101,7 @@ class Writer:
 
                 words = line.split()
                 if words and words[1] != '.':
+                    current_word = words[1]
                     local_tag_set = []
                     for k, v in emission_probability.iteritems():
                         keys = k.split('|')
@@ -109,6 +111,7 @@ class Writer:
                         words[1] = UNKNOWN_WORD
                         local_tag_set = get_unknown_word_tags()
                     sentence.append(words[1])
+                    original_sentence.append(current_word)
                     tag_set.extend(local_tag_set)
                 elif words and words[1] == '.':
                     # send sentence to viterbi to compute tags.
@@ -118,11 +121,12 @@ class Writer:
                     viterbi_states = viterbi.get_viterbi_states()
 
                     for word in range(0, len(sentence)):
-                        lines_to_write.append(str(word+1) + '\t' + sentence[word] + '\t' + viterbi_states[word] + '\n')
+                        lines_to_write.append(str(word+1) + '\t' + original_sentence[word] + '\t' + viterbi_states[word] + '\n')
 
                     lines_to_write.append(str(len(sentence)+1) + '\t' + '.' + '\t' + '.' + '\n')
                     lines_to_write.append('\n')
                     sentence = []
+                    original_sentence = []
                     tag_set = []
 
         with open(self.output_path, 'w') as of:
@@ -130,11 +134,6 @@ class Writer:
 
 
 if __name__ == "__main__":
-    # training_data_file_path = DOC_PATH + TRAINING_DATA_FILE
-    # reader = Reader(training_data_file_path)
-    # word_map = reader.get_word_map()
-    # writer = Writer(word_map, input_file=INPUT_PATH+TEST_DATA_FILE,
-    #                 output_path=OUTPUT_PATH+'output.txt')
 
     populate_bigram_probability(input_unigram_file=DOC_PATH + UNIGRAM_TAG_FILE,
                                 input_bigram_file=DOC_PATH + BIGRAM_TAG_FILE,

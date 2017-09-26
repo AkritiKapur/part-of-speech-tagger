@@ -1,4 +1,3 @@
-
 emission_probability = {}
 transition_probability = {}
 bigram_tags_count = {}
@@ -7,6 +6,7 @@ unigram_tags_count = {}
 unigram_tag = []
 unigram_vocab_dict = {}
 UNKNOWN_WORD = 'UNK'
+UNKNOWN_WORD_FREQUENCY = ['1']
 ADD_K_SMOOTHING_CONSTANT = 0.75
 bigram_tag_vocab = 0
 unknown_word_tags = []
@@ -70,14 +70,7 @@ def _calculate_transition_probability(unigram_tag, bigram_tags_count, input_bigr
     :return:
     """
 
-    # for tag in range(0, len(unigram_tag)):
-    #     for next_tag in range(0, len(unigram_tag)):
-    #         if unigram_tag[tag] + '|' + unigram_tag[next_tag] not in bigram_tags_count:
-    #             bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] = 0
-    #         transition_probability[unigram_tag[next_tag] + '|' + unigram_tag[tag]] = \
-    #             bigram_tags_count[unigram_tag[tag] + '|' + unigram_tag[next_tag]] / unigram_tags_count[unigram_tag[tag]]
-
-    # Using Add k smoothingw with k = 0.75
+    # Using Add k smoothing.
     for tag in range(0, len(unigram_tag)):
         for next_tag in range(0, len(unigram_tag)):
             if unigram_tag[tag] + '|' + unigram_tag[next_tag] not in bigram_tags_count:
@@ -97,7 +90,7 @@ def _convert_unknown_words(input_word_file):
         data = f.readlines()
         for line in data:
             words = line.split()
-            if words[0] == '1':
+            if words[0] in UNKNOWN_WORD_FREQUENCY:
                 words[1] = UNKNOWN_WORD
                 if UNKNOWN_WORD not in unigram_vocab_dict:
                     unigram_vocab_dict[words[1]] = 1
